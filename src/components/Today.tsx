@@ -391,6 +391,10 @@ export default function Today({
     await addDrink("water", 8)
     showToast("Water logged")
   }
+  async function handleWater30() {
+    await addDrink("water", 30)
+    showToast("30oz water logged")
+  }
   async function handleCoffee() {
     await addDrink("coffee", 12, "with creamer")
     showToast("Coffee logged")
@@ -433,6 +437,7 @@ export default function Today({
         <div className="text-sm font-semibold mb-2">Quick taps</div>
         <div className="grid grid-cols-2 gap-2">
           <QuickTapButton label="Water" sub="+8 oz" onClick={handleWater} />
+          <QuickTapButton label="Water (30oz)" sub="+30 oz" onClick={handleWater30} />
           <QuickTapButton label="Coffee" sub="12oz with creamer" onClick={handleCoffee} />
           <QuickTapButton label="Electrolytes" sub="+16 oz" onClick={handleElectrolytes} />
           <QuickTapButton label="Repeat last meal" onClick={handleRepeatMeal} />
