@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { todayStr } from "./db"
 import Today from "./components/Today"
 import Trends from "./components/Trends"
 import Flares from "./components/Flares"
@@ -43,17 +44,26 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("today")
+  const [selectedDate, setSelectedDate] = useState(todayStr())
   const [activeForm, setActiveForm] = useState<string | null>(null)
+  const [editId, setEditId] = useState<number | undefined>(undefined)
   const [logMenuOpen, setLogMenuOpen] = useState(false)
 
-  const close = () => setActiveForm(null)
+  function openForm(form: string, id?: number) {
+    setEditId(id)
+    setActiveForm(form)
+  }
+  function close() {
+    setActiveForm(null)
+    setEditId(undefined)
+  }
 
   return (
     <div className="min-h-screen" style={{ background: "var(--page-plane)" }}>
       <div className="max-w-md mx-auto relative min-h-screen" style={{ background: "var(--page-plane)" }}>
-        {tab === "today" && <Today onOpenForm={setActiveForm} />}
+        {tab === "today" && <Today onOpenForm={openForm} date={selectedDate} onDateChange={setSelectedDate} />}
         {tab === "trends" && <Trends />}
-        {tab === "flares" && <Flares onLogFlare={() => setActiveForm("flare")} />}
+        {tab === "flares" && <Flares onLogFlare={() => openForm("flare")} />}
         {tab === "setup" && <Setup />}
 
         <button
@@ -89,14 +99,18 @@ export default function App() {
           </div>
         </nav>
 
-        <Sheet open={logMenuOpen} title="Log" onClose={() => setLogMenuOpen(false)}>
+        <Sheet
+          open={logMenuOpen}
+          title={selectedDate === todayStr() ? "Log" : `Log — ${selectedDate}`}
+          onClose={() => setLogMenuOpen(false)}
+        >
           <div className="grid grid-cols-2 gap-2">
             {LOG_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
                 onClick={() => {
                   setLogMenuOpen(false)
-                  setActiveForm(opt.key)
+                  openForm(opt.key)
                 }}
                 className="rounded-xl border p-3 text-left"
                 style={{ borderColor: "var(--border)", background: "var(--card-surface)" }}
@@ -110,18 +124,18 @@ export default function App() {
           </div>
         </Sheet>
 
-        <FoodForm open={activeForm === "food"} onClose={close} />
-        <DrinkForm open={activeForm === "drink"} onClose={close} />
-        <ActivityForm open={activeForm === "activity"} onClose={close} />
-        <SymptomForm open={activeForm === "symptom"} onClose={close} />
-        <SymptomForm open={activeForm === "flare"} onClose={close} initialFlare />
-        <PotsVitalsForm open={activeForm === "pots"} onClose={close} />
-        <Glp1Form open={activeForm === "glp1"} onClose={close} />
-        <DigestionForm open={activeForm === "digestion"} onClose={close} />
-        <BodyMeasurementsForm open={activeForm === "measurements"} onClose={close} />
-        <DailyCheckinForm open={activeForm === "checkin"} onClose={close} />
-        <WeatherForm open={activeForm === "weather"} onClose={close} />
-        <OneTimeMedForm open={activeForm === "one-time-med"} onClose={close} />
+        <FoodForm open={activeForm === "food"} onClose={close} editId={editId} date={selectedDate} />
+        <DrinkForm open={activeForm === "drink"} onClose={close} editId={editId} date={selectedDate} />
+        <ActivityForm open={activeForm === "activity"} onClose={close} editId={editId} date={selectedDate} />
+        <SymptomForm open={activeForm === "symptom"} onClose={close} editId={editId} date={selectedDate} />
+        <SymptomForm open={activeForm === "flare"} onClose={close} date={selectedDate} initialFlare />
+        <PotsVitalsForm open={activeForm === "pots"} onClose={close} editId={editId} date={selectedDate} />
+        <Glp1Form open={activeForm === "glp1"} onClose={close} editId={editId} date={selectedDate} />
+        <DigestionForm open={activeForm === "digestion"} onClose={close} editId={editId} date={selectedDate} />
+        <BodyMeasurementsForm open={activeForm === "measurements"} onClose={close} editId={editId} date={selectedDate} />
+        <DailyCheckinForm open={activeForm === "checkin"} onClose={close} date={selectedDate} />
+        <WeatherForm open={activeForm === "weather"} onClose={close} date={selectedDate} />
+        <OneTimeMedForm open={activeForm === "one-time-med"} onClose={close} editId={editId} date={selectedDate} />
       </div>
     </div>
   )

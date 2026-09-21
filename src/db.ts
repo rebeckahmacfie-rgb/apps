@@ -66,6 +66,26 @@ export function nowIso(): string {
   return new Date().toISOString()
 }
 
+export function toTimeInputValue(iso: string): string {
+  const d = new Date(iso)
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+
+export function combineDateAndTime(dateStr: string, timeStr: string): string {
+  const [h, m] = timeStr.split(":").map(Number)
+  const d = new Date(dateStr + "T00:00:00")
+  d.setHours(h, m, 0, 0)
+  return d.toISOString()
+}
+
+// For new entries: exact "now" precision when logging today with no explicit
+// time chosen; otherwise combines the target date with a time (falling back
+// to the current clock time when backdating without picking one).
+export function timestampFor(targetDate: string, time: string): string {
+  if (!time) return targetDate === todayStr() ? nowIso() : combineDateAndTime(targetDate, toTimeInputValue(nowIso()))
+  return combineDateAndTime(targetDate, time)
+}
+
 let seeded = false
 export async function ensureSeeded() {
   if (seeded) return

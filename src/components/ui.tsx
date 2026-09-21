@@ -51,6 +51,29 @@ export function GhostButton({
   )
 }
 
+export function FormFooter({
+  onSave,
+  onDelete,
+  saveLabel = "Save",
+}: {
+  onSave: () => void
+  onDelete?: () => void
+  saveLabel?: string
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <BigButton className="w-full" onClick={onSave}>
+        {saveLabel}
+      </BigButton>
+      {onDelete && (
+        <button onClick={onDelete} className="text-xs font-medium text-center py-1" style={{ color: "var(--status-critical)" }}>
+          Delete entry
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function QuickTapButton({
   label,
   sub,
