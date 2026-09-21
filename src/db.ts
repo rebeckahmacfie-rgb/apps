@@ -2,6 +2,7 @@ import Dexie, { type Table } from "dexie"
 import {
   DEFAULT_FOOD_TAGS,
   DEFAULT_GLP1_SITES,
+  DEFAULT_MEDS,
   type ActivityEntry,
   type BodyMeasurementEntry,
   type DailyCheckin,
@@ -76,6 +77,15 @@ export async function ensureSeeded() {
       assumeScheduledDailyMeds: true,
       lastFoodTagOptions: [...DEFAULT_FOOD_TAGS],
     })
+  }
+
+  // Seeds the real medication list once, whenever the meds table is still
+  // empty — independent of the settings check above, so it also fires for
+  // an install that already has settings but no meds entered yet.
+  if ((await db.meds.count()) === 0) {
+    await db.meds.bulkAdd(
+      DEFAULT_MEDS.map((m, i) => ({ name: m.name, kind: m.kind, active: true, sortOrder: i })),
+    )
   }
 }
 

@@ -184,6 +184,35 @@ export const DEFAULT_GLP1_SITES = [
   "Right arm",
 ]
 
+export const DEFAULT_MEDS: { name: string; kind: MedKind }[] = [
+  // Daily
+  { name: "Propranolol (Inderal) 60mg — AM", kind: "daily" },
+  { name: "Spironolactone (Aldactone) 25mg — AM", kind: "daily" },
+  { name: "Montelukast (Singulair) 10mg — AM", kind: "daily" },
+  { name: "Sucralfate (Carafate) 1gm — AM/PM", kind: "daily" },
+  { name: "Pantoprazole (Protonix) 40mg — AM/PM", kind: "daily" },
+  { name: "Famotidine (Pepcid) 40mg — AM/PM", kind: "daily" },
+  { name: "Vortioxetine (Trintellix) 20mg — PM", kind: "daily" },
+  { name: "Amitriptyline (Elavil) 25mg — PM", kind: "daily" },
+  { name: "Fexofenadine (Allegra) 180mg — AM/PM", kind: "daily" },
+  { name: "Vitamin D3 50mcg — AM", kind: "daily" },
+  { name: "Boswellia 800mg — AM/PM", kind: "daily" },
+  { name: "Magnesium Glycinate 240mg — PM", kind: "daily" },
+  { name: "Melatonin 1mg — PM", kind: "daily" },
+  { name: "Lymphatic Pump (2hrs/day)", kind: "daily" },
+  // Weekly
+  { name: "Vivelle patch (Estradiol) .0375mg — 2x/week", kind: "weekly" },
+  { name: "IV infusion — 1350mL NS + lidocaine, B-complex, ALA, vit C, MgSO4, glutathione", kind: "weekly" },
+  // As needed
+  { name: "Zofran ODT (Ondansetron) 4mg — q6h", kind: "as-needed" },
+  { name: "Linzess (Linaclotide) 72mcg", kind: "as-needed" },
+  { name: "Azelastine nasal spray 137mcg", kind: "as-needed" },
+  { name: "Estrace cream (Estradiol) .01% — 2x/week", kind: "as-needed" },
+  { name: "Xopenex (Levalbuterol) 45mcg — 2 puffs/4h", kind: "as-needed" },
+  { name: "Tylenol (Acetaminophen)", kind: "as-needed" },
+  { name: "Advil (Ibuprofen)", kind: "as-needed" },
+]
+
 export const DEFAULT_FOOD_TAGS = [
   "ultra-processed",
   "high-sodium",
