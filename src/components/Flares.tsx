@@ -90,7 +90,7 @@ export default function Flares({ onLogFlare }: { onLogFlare: () => void }) {
     <div className="px-4 pb-40 pt-4 flex flex-col gap-4">
       <h1 className="text-xl font-bold">Flares</h1>
       <BigButton className="w-full" style={{ background: "var(--status-critical)" }} onClick={onLogFlare}>
-        Log a flare-up
+        Log A Flare-Up
       </BigButton>
 
       <div>

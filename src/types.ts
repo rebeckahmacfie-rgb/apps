@@ -57,12 +57,15 @@ export interface SymptomEntry {
   id?: number
   date: string
   timestamp: string
-  kind: "pain" | "general"
-  name: string // e.g. "Pain flare", "Nausea", "Brain fog", "Fatigue"
-  rating: number // 1-10
+  kind: "pain" | "general" | "digestion"
+  name: string // e.g. "Pain flare", "Nausea", "Brain fog", "Fatigue", "Digestion"
+  rating: number // 1-10 severity for pain/general; Bristol scale (1-7) for digestion
   location?: string
   painType?: PainType
   isFlare: boolean
+  bloating?: number // 1-10, digestion only
+  nausea?: number // 1-10, digestion only
+  reflux?: number // 1-10, digestion only
   notes?: string
 }
 

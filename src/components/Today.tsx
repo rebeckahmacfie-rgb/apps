@@ -51,7 +51,7 @@ function fmtTime(iso: string) {
 
 function useEntriesForDate(date: string) {
   return useLiveQuery(async () => {
-    const [food, drinks, activities, symptoms, pots, glp1, digestion, medEvents, checkins, weather, measurements] =
+    const [food, drinks, activities, symptoms, pots, glp1, medEvents, checkins, weather, measurements] =
       await Promise.all([
         db.food.where("date").equals(date).toArray(),
         db.drinks.where("date").equals(date).toArray(),
@@ -59,7 +59,6 @@ function useEntriesForDate(date: string) {
         db.symptoms.where("date").equals(date).toArray(),
         db.potsVitals.where("date").equals(date).toArray(),
         db.glp1Doses.where("date").equals(date).toArray(),
-        db.digestion.where("date").equals(date).toArray(),
         db.medEvents.where("date").equals(date).toArray(),
         db.dailyCheckins.where("date").equals(date).toArray(),
         db.weather.where("date").equals(date).toArray(),
@@ -100,8 +99,16 @@ function useEntriesForDate(date: string) {
       entries.push({
         id: `sym-${s.id}`,
         time: s.timestamp,
-        label: `${s.name} · ${s.rating}/10${s.isFlare ? " · FLARE" : ""}`,
-        detail: s.location,
+        label:
+          s.kind === "digestion"
+            ? `Digestion · Bristol ${s.rating}`
+            : `${s.name} · ${s.rating}/10${s.isFlare ? " · FLARE" : ""}`,
+        detail:
+          s.kind === "digestion"
+            ? [s.bloating ? `bloating ${s.bloating}` : null, s.nausea ? `nausea ${s.nausea}` : null, s.reflux ? `reflux ${s.reflux}` : null]
+                .filter(Boolean)
+                .join(" · ")
+            : s.location,
         formType: "symptom",
         recordId: s.id!,
         onDelete: async () => db.symptoms.delete(s.id!),
@@ -130,16 +137,6 @@ function useEntriesForDate(date: string) {
         formType: "glp1",
         recordId: g.id!,
         onDelete: async () => db.glp1Doses.delete(g.id!),
-      })
-    for (const dg of digestion)
-      entries.push({
-        id: `dig-${dg.id}`,
-        time: dg.timestamp,
-        label: "Digestion",
-        detail: dg.bristolScale ? `Bristol ${dg.bristolScale}` : undefined,
-        formType: "digestion",
-        recordId: dg.id!,
-        onDelete: async () => db.digestion.delete(dg.id!),
       })
     for (const m of medEvents.filter((e) => e.kind !== "missed"))
       entries.push({
@@ -221,7 +218,7 @@ function DailyMedsCard({ date }: { date: string }) {
   if (!assumeScheduled) {
     return (
       <Card>
-        <div className="text-sm font-semibold mb-2">Daily meds</div>
+        <div className="text-sm font-semibold mb-2">Daily Meds</div>
         <div className="flex flex-col gap-2">
           {dailyMeds.map((med) => {
             const taken = takenForDate?.some((e) => e.medId === med.id)
@@ -253,7 +250,7 @@ function DailyMedsCard({ date }: { date: string }) {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold">
-                {missedCount === 0 ? "Daily meds taken" : `${takenCount} of ${total} daily meds taken`}
+                {missedCount === 0 ? "Daily Meds Taken" : `${takenCount} of ${total} Daily Meds Taken`}
               </div>
               {missedCount > 0 && (
                 <div className="text-xs mt-0.5" style={{ color: "var(--status-critical)" }}>
@@ -265,7 +262,7 @@ function DailyMedsCard({ date }: { date: string }) {
           </div>
         </Card>
       </button>
-      <Sheet open={pickerOpen} title="Daily meds" onClose={() => setPickerOpen(false)}>
+      <Sheet open={pickerOpen} title="Daily Meds" onClose={() => setPickerOpen(false)}>
         <p className="text-xs mb-3" style={{ color: "var(--text-muted)" }}>
           Daily meds are assumed taken. Check anything that was missed.
         </p>
@@ -359,7 +356,7 @@ function AsNeededMedsCard({ date }: { date: string }) {
 
   return (
     <Card>
-      <div className="text-sm font-semibold mb-2">As needed</div>
+      <div className="text-sm font-semibold mb-2">As Needed</div>
       <div className="flex gap-2 flex-wrap">
         {meds.map((med) => (
           <button
@@ -391,7 +388,7 @@ function Glp1Card({ onLog }: { onLog: () => void }) {
             </div>
           </div>
           <span className="text-xs font-medium" style={{ color: "var(--series-1)" }}>
-            Log dose
+            Log Dose
           </span>
         </div>
       </Card>
@@ -517,13 +514,13 @@ export default function Today({
 
       {isToday ? (
         <div>
-          <div className="text-sm font-semibold mb-2">Quick taps</div>
+          <div className="text-sm font-semibold mb-2">Quick Taps</div>
           <div className="grid grid-cols-2 gap-2">
             <QuickTapButton label="Water" sub="+8 oz" onClick={handleWater} />
-            <QuickTapButton label="Water (30oz)" sub="+30 oz" onClick={handleWater30} />
+            <QuickTapButton label="Water (30 oz)" sub="+30 oz" onClick={handleWater30} />
             <QuickTapButton label="Coffee" sub="12oz with creamer" onClick={handleCoffee} />
             <QuickTapButton label="Electrolytes" sub="+16 oz" onClick={handleElectrolytes} />
-            <QuickTapButton label="Repeat last meal" onClick={handleRepeatMeal} />
+            <QuickTapButton label="Repeat Last Meal" onClick={handleRepeatMeal} />
             <QuickTapButton
               label={fetchingWeather ? "Fetching…" : "Weather"}
               sub={settings?.locationLabel ?? "Set location in Setup"}
@@ -542,10 +539,10 @@ export default function Today({
       <WeeklyMedsCard date={date} />
       <AsNeededMedsCard date={date} />
 
-      <GhostButton onClick={() => onOpenForm("one-time-med")}>Log a one-time med or supplement</GhostButton>
+      <GhostButton onClick={() => onOpenForm("one-time-med")}>Log A One-Time Med Or Supplement</GhostButton>
 
       <div>
-        <div className="text-sm font-semibold mb-2">{isToday ? "Today's log" : "Log for this day"}</div>
+        <div className="text-sm font-semibold mb-2 text-center">{isToday ? "Today's Log" : "Log For This Day"}</div>
         {(!entries || entries.length === 0) && (
           <p className="text-sm" style={{ color: "var(--text-muted)" }}>
             {isToday ? "Nothing logged yet today." : "Nothing logged for this day."}

@@ -204,7 +204,7 @@ function LocationSettings() {
         {settings?.locationLabel ? `Saved: ${settings.locationLabel}` : "No location saved yet — needed for the weather quick tap and autofill."}
       </p>
       <GhostButton className="w-full mb-2" onClick={useCurrentLocation} disabled={busy}>
-        Use current location
+        Use Current Location
       </GhostButton>
       <div className="flex gap-2">
         <TextInput value={city} onChange={(e) => setCity(e.target.value)} placeholder="Search a city" className="flex-1" />
@@ -284,9 +284,9 @@ function ExportData() {
     <Card>
       <SectionTitle>Export</SectionTitle>
       <div className="flex flex-col gap-2">
-        <GhostButton onClick={() => exportDailySummaryCsv()}>Daily summary (CSV)</GhostButton>
-        <GhostButton onClick={() => exportAllCsv()}>All logs by category (CSV)</GhostButton>
-        <BigButton onClick={() => exportFullBackupJson()}>Full backup (JSON)</BigButton>
+        <GhostButton onClick={() => exportDailySummaryCsv()}>Daily Summary (CSV)</GhostButton>
+        <GhostButton onClick={() => exportAllCsv()}>All Logs By Category (CSV)</GhostButton>
+        <BigButton onClick={() => exportFullBackupJson()}>Full Backup (JSON)</BigButton>
       </div>
     </Card>
   )

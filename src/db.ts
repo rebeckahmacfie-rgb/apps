@@ -107,6 +107,28 @@ export async function ensureSeeded() {
       DEFAULT_MEDS.map((m, i) => ({ name: m.name, kind: m.kind, active: true, sortOrder: i })),
     )
   }
+
+  // Digestion was folded into Symptoms (kind: "digestion"). Move any
+  // existing digestion rows over once, then clear the old table so it
+  // never gets migrated twice and nothing reads from it going forward.
+  const oldDigestion = await db.digestion.toArray()
+  if (oldDigestion.length > 0) {
+    await db.symptoms.bulkAdd(
+      oldDigestion.map((d) => ({
+        date: d.date,
+        timestamp: d.timestamp,
+        kind: "digestion" as const,
+        name: "Digestion",
+        rating: d.bristolScale ?? 0,
+        isFlare: false,
+        bloating: d.bloating,
+        nausea: d.nausea,
+        reflux: d.reflux,
+        notes: d.notes,
+      })),
+    )
+    await db.digestion.clear()
+  }
 }
 
 // Read-only on purpose: dexie-react-hooks' useLiveQuery forbids writes inside

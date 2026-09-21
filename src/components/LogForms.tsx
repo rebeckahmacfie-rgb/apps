@@ -78,7 +78,7 @@ export function FoodForm({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit food" : "Log food"}
+      title={editId != null ? "Edit Food" : "Log Food"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -152,7 +152,7 @@ export function DrinkForm({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit drink" : "Log drink"}
+      title={editId != null ? "Edit Drink" : "Log Drink"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -231,7 +231,7 @@ export function ActivityForm({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit activity" : "Log activity"}
+      title={editId != null ? "Edit Activity" : "Log Activity"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -254,16 +254,25 @@ export function ActivityForm({ open, onClose, editId, date }: FormProps) {
 
 const PAIN_TYPES: PainType[] = ["sharp", "dull", "burning", "cramping", "throbbing", "stabbing", "other"]
 const GENERAL_SYMPTOMS = ["Nausea", "Fatigue", "Brain fog", "Dizziness", "Headache", "Joint pain", "Bloating", "Rash", "Other"]
+type SymptomKind = "pain" | "general" | "digestion"
+const KIND_TABS: { value: SymptomKind; label: string }[] = [
+  { value: "pain", label: "Pain" },
+  { value: "digestion", label: "Digestion" },
+  { value: "general", label: "Other" },
+]
 
 export function SymptomForm({ open, onClose, editId, date, initialFlare = false }: FormProps & { initialFlare?: boolean }) {
   const targetDate = date ?? todayStr()
   const existing = useLiveQuery(() => (editId != null ? db.symptoms.get(editId) : undefined), [editId])
-  const [kind, setKind] = useState<"pain" | "general">("pain")
+  const [kind, setKind] = useState<SymptomKind>("pain")
   const [name, setName] = useState("Pain")
   const [rating, setRating] = useState<number | undefined>(undefined)
   const [location, setLocation] = useState("")
   const [painType, setPainType] = useState<PainType>("sharp")
   const [isFlare, setIsFlare] = useState(initialFlare)
+  const [bloating, setBloating] = useState<number | undefined>(undefined)
+  const [nausea, setNausea] = useState<number | undefined>(undefined)
+  const [reflux, setReflux] = useState<number | undefined>(undefined)
   const [notes, setNotes] = useState("")
   const [time, setTime] = useState("")
   const showTime = shouldShowTime(editId, targetDate)
@@ -278,6 +287,9 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
       setLocation(existing.location ?? "")
       setPainType(existing.painType ?? "sharp")
       setIsFlare(existing.isFlare)
+      setBloating(existing.bloating)
+      setNausea(existing.nausea)
+      setReflux(existing.reflux)
       setNotes(existing.notes ?? "")
       setTime(toTimeInputValue(existing.timestamp))
     } else {
@@ -287,6 +299,9 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
       setLocation("")
       setPainType("sharp")
       setIsFlare(initialFlare)
+      setBloating(undefined)
+      setNausea(undefined)
+      setReflux(undefined)
       setNotes("")
       setTime(targetDate !== todayStr() ? toTimeInputValue(new Date().toISOString()) : "")
     }
@@ -296,11 +311,14 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
     if (!rating) return
     const payload = {
       kind,
-      name: kind === "pain" ? "Pain" : name,
+      name: kind === "pain" ? "Pain" : kind === "digestion" ? "Digestion" : name,
       rating,
       location: kind === "pain" ? location || undefined : undefined,
       painType: kind === "pain" ? painType : undefined,
       isFlare: kind === "pain" ? isFlare : false,
+      bloating: kind === "digestion" ? bloating : undefined,
+      nausea: kind === "digestion" ? nausea : undefined,
+      reflux: kind === "digestion" ? reflux : undefined,
       notes: notes || undefined,
     }
     if (editId != null && existing) {
@@ -319,29 +337,24 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit symptom" : "Log symptom"}
+      title={editId != null ? "Edit Symptom" : "Log Symptom"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
       {showTime && <TimeField value={time} onChange={setTime} />}
       <Field label="Type">
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setKind("pain")}
-            className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium"
-            style={{ borderColor: "var(--border)", background: kind === "pain" ? "var(--series-1)" : "var(--surface-1)", color: kind === "pain" ? "#fff" : "var(--text-primary)" }}
-          >
-            Pain
-          </button>
-          <button
-            type="button"
-            onClick={() => setKind("general")}
-            className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium"
-            style={{ borderColor: "var(--border)", background: kind === "general" ? "var(--series-1)" : "var(--surface-1)", color: kind === "general" ? "#fff" : "var(--text-primary)" }}
-          >
-            Other symptom
-          </button>
+          {KIND_TABS.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setKind(t.value)}
+              className="flex-1 rounded-lg border px-3 py-2 text-sm font-medium"
+              style={{ borderColor: "var(--border)", background: kind === t.value ? "var(--series-1)" : "var(--surface-1)", color: kind === t.value ? "#fff" : "var(--text-primary)" }}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </Field>
       {kind === "general" && (
@@ -355,8 +368,8 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
           </Select>
         </Field>
       )}
-      <Field label="Severity (1-10)">
-        <RatingScale value={rating} onChange={setRating} />
+      <Field label={kind === "digestion" ? "Bristol scale (1-7)" : "Severity (1-10)"}>
+        <RatingScale value={rating} onChange={setRating} max={kind === "digestion" ? 7 : 10} />
       </Field>
       {kind === "pain" && (
         <>
@@ -376,6 +389,19 @@ export function SymptomForm({ open, onClose, editId, date, initialFlare = false 
             <input type="checkbox" checked={isFlare} onChange={(e) => setIsFlare(e.target.checked)} className="w-4 h-4" />
             <span className="text-sm font-medium">This is a flare-up</span>
           </label>
+        </>
+      )}
+      {kind === "digestion" && (
+        <>
+          <Field label="Bloating (1-10)">
+            <RatingScale value={bloating} onChange={setBloating} />
+          </Field>
+          <Field label="Nausea (1-10)">
+            <RatingScale value={nausea} onChange={setNausea} />
+          </Field>
+          <Field label="Reflux (1-10)">
+            <RatingScale value={reflux} onChange={setReflux} />
+          </Field>
         </>
       )}
       <Field label="Notes (optional)">
@@ -452,7 +478,7 @@ export function PotsVitalsForm({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit POTS vitals" : "POTS vitals"}
+      title={editId != null ? "Edit POTS Vitals" : "Log POTS Vitals"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -534,7 +560,7 @@ export function Glp1Form({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit GLP-1 dose" : "Log GLP-1 dose"}
+      title={editId != null ? "Edit GLP-1 Dose" : "Log GLP-1 Dose"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -553,79 +579,6 @@ export function Glp1Form({ open, onClose, editId, date }: FormProps) {
             </option>
           ))}
         </Select>
-      </Field>
-      <Field label="Notes (optional)">
-        <TextArea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </Field>
-    </Sheet>
-  )
-}
-
-export function DigestionForm({ open, onClose, editId, date }: FormProps) {
-  const targetDate = date ?? todayStr()
-  const existing = useLiveQuery(() => (editId != null ? db.digestion.get(editId) : undefined), [editId])
-  const [bristolScale, setBristolScale] = useState<number | undefined>(undefined)
-  const [bloating, setBloating] = useState<number | undefined>(undefined)
-  const [nausea, setNausea] = useState<number | undefined>(undefined)
-  const [reflux, setReflux] = useState<number | undefined>(undefined)
-  const [notes, setNotes] = useState("")
-  const [time, setTime] = useState("")
-  const showTime = shouldShowTime(editId, targetDate)
-
-  useEffect(() => {
-    if (!open) return
-    if (editId != null) {
-      if (!existing) return
-      setBristolScale(existing.bristolScale)
-      setBloating(existing.bloating)
-      setNausea(existing.nausea)
-      setReflux(existing.reflux)
-      setNotes(existing.notes ?? "")
-      setTime(toTimeInputValue(existing.timestamp))
-    } else {
-      setBristolScale(undefined)
-      setBloating(undefined)
-      setNausea(undefined)
-      setReflux(undefined)
-      setNotes("")
-      setTime(targetDate !== todayStr() ? toTimeInputValue(new Date().toISOString()) : "")
-    }
-  }, [open, editId, existing, targetDate])
-
-  async function save() {
-    const payload = { bristolScale, bloating, nausea, reflux, notes: notes || undefined }
-    if (editId != null && existing) {
-      await db.digestion.update(editId, { ...payload, timestamp: timestampFor(existing.date, time) })
-    } else {
-      await db.digestion.add({ date: targetDate, timestamp: timestampFor(targetDate, time), ...payload })
-    }
-    onClose()
-  }
-
-  async function remove() {
-    if (editId != null) await db.digestion.delete(editId)
-    onClose()
-  }
-
-  return (
-    <Sheet
-      open={open}
-      title={editId != null ? "Edit digestion" : "Log digestion"}
-      onClose={onClose}
-      footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
-    >
-      {showTime && <TimeField value={time} onChange={setTime} />}
-      <Field label="Bristol scale (1-7)">
-        <RatingScale value={bristolScale} onChange={setBristolScale} max={7} />
-      </Field>
-      <Field label="Bloating (1-10)">
-        <RatingScale value={bloating} onChange={setBloating} />
-      </Field>
-      <Field label="Nausea (1-10)">
-        <RatingScale value={nausea} onChange={setNausea} />
-      </Field>
-      <Field label="Reflux (1-10)">
-        <RatingScale value={reflux} onChange={setReflux} />
       </Field>
       <Field label="Notes (optional)">
         <TextArea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -688,7 +641,7 @@ export function BodyMeasurementsForm({ open, onClose, editId, date }: FormProps)
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit body measurements" : "Body measurements"}
+      title={editId != null ? "Edit Body Measurements" : "Log Body Measurements"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
@@ -782,7 +735,7 @@ export function DailyCheckinForm({ open, onClose, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={targetDate === todayStr() ? "Daily check-in" : `Check-in — ${targetDate}`}
+      title={targetDate === todayStr() ? "Daily Check-In" : `Check-In — ${targetDate}`}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={existing ? remove : undefined} />}
     >
@@ -903,7 +856,7 @@ export function WeatherForm({ open, onClose, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={targetDate === todayStr() ? "Today's weather" : `Weather — ${targetDate}`}
+      title={targetDate === todayStr() ? "Today's Weather" : `Weather — ${targetDate}`}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={existing ? remove : undefined} />}
     >
@@ -990,7 +943,7 @@ export function OneTimeMedForm({ open, onClose, editId, date }: FormProps) {
   return (
     <Sheet
       open={open}
-      title={editId != null ? "Edit med" : "One-time med or supplement"}
+      title={editId != null ? "Edit Med" : "One-Time Med Or Supplement"}
       onClose={onClose}
       footer={<FormFooter onSave={save} onDelete={editId != null ? remove : undefined} />}
     >
