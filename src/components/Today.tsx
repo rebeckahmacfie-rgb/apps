@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks"
 import { useState } from "react"
-import { db, nowIso, todayStr } from "../db"
+import { db, getSettings, nowIso, todayStr } from "../db"
+import { fetchCurrentWeather, saveWeatherForToday } from "../lib/weather"
 import type { MedDefinition } from "../types"
 import { Card, GhostButton, QuickTapButton, Sheet, StatusPill } from "./ui"
 
@@ -382,7 +383,9 @@ export default function Today({
   onOpenForm: (form: string) => void
 }) {
   const entries = useTodayEntries()
+  const settings = useLiveQuery(() => getSettings(), [])
   const [toast, showToast] = useToast()
+  const [fetchingWeather, setFetchingWeather] = useState(false)
 
   async function handleWater() {
     await addDrink("water", 8)
@@ -399,6 +402,22 @@ export default function Today({
   async function handleRepeatMeal() {
     const ok = await repeatLastMeal()
     showToast(ok ? "Last meal repeated" : "No previous meal to repeat")
+  }
+  async function handleWeather() {
+    if (settings?.locationLat == null || settings?.locationLon == null) {
+      showToast("Set a location in Setup first")
+      return
+    }
+    setFetchingWeather(true)
+    try {
+      const w = await fetchCurrentWeather(settings.locationLat, settings.locationLon)
+      await saveWeatherForToday(w)
+      showToast(`${w.highF}°/${w.lowF}°F · ${w.conditions}`)
+    } catch {
+      showToast("Couldn't fetch weather")
+    } finally {
+      setFetchingWeather(false)
+    }
   }
 
   return (
@@ -417,6 +436,11 @@ export default function Today({
           <QuickTapButton label="Coffee" sub="12oz with creamer" onClick={handleCoffee} />
           <QuickTapButton label="Electrolytes" sub="+16 oz" onClick={handleElectrolytes} />
           <QuickTapButton label="Repeat last meal" onClick={handleRepeatMeal} />
+          <QuickTapButton
+            label={fetchingWeather ? "Fetching…" : "Weather"}
+            sub={settings?.locationLabel ?? "Set location in Setup"}
+            onClick={handleWeather}
+          />
         </div>
       </div>
 

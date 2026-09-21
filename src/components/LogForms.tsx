@@ -9,7 +9,8 @@ import {
   type PainType,
   type PressureTrend,
 } from "../types"
-import { BigButton, Field, RatingScale, Select, Sheet, TagPicker, TextArea, TextInput } from "./ui"
+import { fetchCurrentWeather } from "../lib/weather"
+import { BigButton, Field, GhostButton, RatingScale, Select, Sheet, TagPicker, TextArea, TextInput } from "./ui"
 
 interface FormProps {
   open: boolean
@@ -486,11 +487,34 @@ const PRESSURE_TRENDS: PressureTrend[] = ["falling", "steady", "rising"]
 export function WeatherForm({ open, onClose }: FormProps) {
   const date = todayStr()
   const existing = useLiveQuery(() => db.weather.where("date").equals(date).first(), [date, open])
+  const settings = useLiveQuery(() => getSettings(), [open])
   const [conditions, setConditions] = useState("")
   const [highF, setHighF] = useState<number | "">("")
   const [lowF, setLowF] = useState<number | "">("")
   const [pressureTrend, setPressureTrend] = useState<PressureTrend>("steady")
   const [notes, setNotes] = useState("")
+  const [autofillBusy, setAutofillBusy] = useState(false)
+  const [autofillStatus, setAutofillStatus] = useState<string | null>(null)
+
+  async function autofill() {
+    if (settings?.locationLat == null || settings?.locationLon == null) {
+      setAutofillStatus("Set a location in Setup first.")
+      return
+    }
+    setAutofillBusy(true)
+    setAutofillStatus(null)
+    try {
+      const w = await fetchCurrentWeather(settings.locationLat, settings.locationLon)
+      setConditions(w.conditions)
+      setHighF(w.highF)
+      setLowF(w.lowF)
+      setPressureTrend(w.pressureTrend)
+    } catch {
+      setAutofillStatus("Couldn't fetch weather — check your connection.")
+    } finally {
+      setAutofillBusy(false)
+    }
+  }
 
   async function save() {
     const payload = {
@@ -511,6 +535,14 @@ export function WeatherForm({ open, onClose }: FormProps) {
 
   return (
     <Sheet open={open} title="Today's weather" onClose={onClose} footer={<BigButton className="w-full" onClick={save}>Save</BigButton>}>
+      <GhostButton className="w-full mb-2" onClick={autofill} disabled={autofillBusy}>
+        {autofillBusy ? "Fetching…" : "Autofill from location"}
+      </GhostButton>
+      {autofillStatus && (
+        <p className="text-xs mb-3" style={{ color: "var(--status-critical)" }}>
+          {autofillStatus}
+        </p>
+      )}
       <Field label="Conditions">
         <TextInput value={conditions} onChange={(e) => setConditions(e.target.value)} placeholder="e.g. Overcast, rain" />
       </Field>

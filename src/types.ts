@@ -170,6 +170,9 @@ export interface Settings {
   glp1Sites: string[]
   assumeScheduledDailyMeds: boolean
   lastFoodTagOptions: string[]
+  locationLat?: number
+  locationLon?: number
+  locationLabel?: string
 }
 
 export const DEFAULT_GLP1_SITES = [

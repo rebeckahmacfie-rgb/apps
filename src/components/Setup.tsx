@@ -1,7 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks"
-import { useState } from "react"
+import { useState, type ChangeEvent } from "react"
 import { db, getSettings, updateSettings } from "../db"
 import { exportAllCsv, exportDailySummaryCsv, exportFullBackupJson } from "../lib/export"
+import { geocodeCity, getCurrentPosition } from "../lib/weather"
+import { importAppleHealthData } from "../lib/appleHealthImport"
 import type { MedDefinition, MedKind } from "../types"
 import { BigButton, Card, Field, GhostButton, SectionTitle, Select, TextInput } from "./ui"
 
@@ -155,6 +157,128 @@ function Preferences() {
   )
 }
 
+function LocationSettings() {
+  const settings = useLiveQuery(() => getSettings(), [])
+  const [city, setCity] = useState("")
+  const [status, setStatus] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function useCurrentLocation() {
+    setBusy(true)
+    setStatus(null)
+    try {
+      const { lat, lon } = await getCurrentPosition()
+      await updateSettings({ locationLat: lat, locationLon: lon, locationLabel: "Current location" })
+      setStatus("Location saved.")
+    } catch {
+      setStatus("Couldn't get your location — check permissions, or search a city below.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function searchCity() {
+    if (!city.trim()) return
+    setBusy(true)
+    setStatus(null)
+    try {
+      const result = await geocodeCity(city.trim())
+      if (!result) {
+        setStatus("Couldn't find that city.")
+      } else {
+        await updateSettings({ locationLat: result.lat, locationLon: result.lon, locationLabel: result.label })
+        setStatus(`Saved: ${result.label}`)
+        setCity("")
+      }
+    } catch {
+      setStatus("Search failed — check your connection.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle>Weather location</SectionTitle>
+      <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+        {settings?.locationLabel ? `Saved: ${settings.locationLabel}` : "No location saved yet — needed for the weather quick tap and autofill."}
+      </p>
+      <GhostButton className="w-full mb-2" onClick={useCurrentLocation} disabled={busy}>
+        Use current location
+      </GhostButton>
+      <div className="flex gap-2">
+        <TextInput value={city} onChange={(e) => setCity(e.target.value)} placeholder="Search a city" className="flex-1" />
+        <button onClick={searchCity} disabled={busy} className="text-sm font-medium px-2" style={{ color: "var(--series-1)" }}>
+          Save
+        </button>
+      </div>
+      {status && (
+        <p className="text-xs mt-2" style={{ color: "var(--text-secondary)" }}>
+          {status}
+        </p>
+      )}
+    </Card>
+  )
+}
+
+function HealthImport() {
+  const [overwrite, setOverwrite] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [summary, setSummary] = useState<string | null>(null)
+
+  async function handleFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ""
+    if (!file) return
+    setBusy(true)
+    setSummary(null)
+    try {
+      const text = await file.text()
+      const result = await importAppleHealthData(text, { overwrite })
+      const totalFound = result.weightDays + result.sleepDays
+      const totalWritten = result.weightWritten + result.sleepWritten
+      if (totalFound === 0) {
+        setSummary("No weight or sleep records found in that file.")
+      } else {
+        const skippedNote = totalWritten < totalFound ? " Some days already had a value and were skipped — check “Overwrite” to replace them." : ""
+        setSummary(
+          `Found weight for ${result.weightDays} day${result.weightDays === 1 ? "" : "s"} and sleep for ${result.sleepDays} night${result.sleepDays === 1 ? "" : "s"}. Wrote ${totalWritten} value${totalWritten === 1 ? "" : "s"} into your daily check-ins.${skippedNote}`,
+        )
+      }
+    } catch {
+      setSummary("That file couldn't be read as an Apple Health export.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle>Import from Apple Health</SectionTitle>
+      <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>
+        In the Health app: profile icon → Export All Health Data. Unzip the download on your phone or computer,
+        then choose the <code>export.xml</code> file here. Brings in weight and sleep into your daily check-ins.
+        Large exports (multiple years) can take a minute.
+      </p>
+      <label className="flex items-center gap-2 mb-2">
+        <input type="checkbox" checked={overwrite} onChange={(e) => setOverwrite(e.target.checked)} className="w-4 h-4" />
+        <span className="text-sm">Overwrite existing values</span>
+      </label>
+      <input type="file" accept=".xml" onChange={handleFile} disabled={busy} className="text-sm" />
+      {busy && (
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)" }}>
+          Importing…
+        </p>
+      )}
+      {summary && (
+        <p className="text-xs mt-2" style={{ color: "var(--text-secondary)" }}>
+          {summary}
+        </p>
+      )}
+    </Card>
+  )
+}
+
 function ExportData() {
   return (
     <Card>
@@ -175,6 +299,8 @@ export default function Setup() {
       <GoalWeight />
       <MedsManager />
       <Glp1SitesManager />
+      <LocationSettings />
+      <HealthImport />
       <Preferences />
       <ExportData />
     </div>
